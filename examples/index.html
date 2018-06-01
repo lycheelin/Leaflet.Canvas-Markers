@@ -42,17 +42,25 @@
 
     var ciLayer = L.canvasIconLayer({}).addTo(map);
 
-    ciLayer.addOnClickListener((event,marker) => console.log('clicked!',marker));
+    ciLayer.addOnClickListener((event,marker) => {
+      console.log('clicked!',marker)
+      marker._popup.setLatLng(marker._latlng).openOn(map);
+    });
 
     var icon = L.icon({
       iconUrl: 'img/pothole.png',
       iconSize: [20, 18],
-      iconAnchor: [10, 9]
+      iconAnchor: [10, 9],
+      popupAnchor:[1, -7],
     });
 
     var markers = [];
     for (var i = 0; i < 10000; i++) {
       var marker = L.marker([58.5578 + Math.random()*1.8, 29.0087 + Math.random()*3.6], {icon: icon});
+      marker.bindPopup(
+        `<div>Hello, I'm clicked !</div>
+        <div>没错，点的就是你！</div>`
+      );
       markers.push(marker);
       ciLayer.addLayer(markers[markers.length-1]);
     }
