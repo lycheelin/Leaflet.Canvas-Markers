@@ -4,7 +4,7 @@ Feel free to contribute
 
 ## Demo
 
-There's a [demo](http://eJuke.github.io/Leaflet.Canvas-Markers/examples/index.html) for 10000 points, running on Canvas
+There's a [demo](https://lycheelin.github.io/Leaflet.Canvas-Markers/examples/index.html) for 10000 points, running on Canvas
 
 ## Installation and basic usage
 
