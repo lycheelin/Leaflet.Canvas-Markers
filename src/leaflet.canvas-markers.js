@@ -74,6 +74,8 @@
 
       map.on('moveend', this._reset, this);
       map.on('click', this._executeClickListeners, this);
+      map.on('zoomstart', this._clearLayer, this);
+      map.on('mousemove', L.Util.throttle(this._handleMouseHover, 120, this), this);
     },
 
     onRemove: function (map) {
@@ -82,11 +84,33 @@
       } else {
         map.getPanes().overlayPane.removeChild(this._canvas);
       }
+
+      map.off('moveend', this._reset, this);
+      map.off('click', this._executeClickListeners, this);
+      map.off('zoomstart', this._clearLayer, this);
+      map.off('mousemove', L.Util.throttle(this._handleMouseHover, 120, this), this);
     },
 
     addTo: function (map) {
       map.addLayer(this);
       return this;
+    },
+
+    _clearLayer:function () {
+      this._context && this._context.clearRect(0, 0, this._canvas.width, this._canvas.height);
+    },
+
+    _handleMouseHover:function(event){
+      L.DomUtil.removeClass(this._canvas, 'leaflet-interactive');
+      for (var markerId in this._markers) {
+        var marker = this._markers[markerId];
+        var point = this._map.latLngToContainerPoint(this._markers[markerId].getLatLng());
+
+        if (this._hit(marker, point, event)) {
+          L.DomUtil.addClass(this._canvas, 'leaflet-interactive');
+          break;
+        }
+      }
     },
 
     _drawMarker: function (marker) {
@@ -106,6 +130,10 @@
     },
 
     _drawImage: function (marker, pointPos) {
+      // 增加图片方向旋转功能，暂不开启
+      // this._context.translate(pointPos.x,pointPos.y)
+      // this._context.rotate(30 * Math.PI / 180);//旋转30度
+      // 把下面 pointPos.x 和 pointPos.y 都改为 0
       this._context.drawImage(
           marker.canvas_img,
           pointPos.x - marker.options.icon.options.iconAnchor[0],
@@ -113,6 +141,8 @@
           marker.options.icon.options.iconSize[0],
           marker.options.icon.options.iconSize[1]
         );
+      // this._context.rotate(330 * Math.PI / 180);//旋转 360 - 30 度 复原
+      // this._context.translate(-pointPos.x,-pointPos.y)
     },
 
     _reset: function () {
@@ -161,6 +191,9 @@
     },
 
     addOnClickListener: function (listener) {
+      if(!this._onClickListeners) {
+        this._onClickListeners = [];
+      }
       this._onClickListeners.push(listener);
     },
 
@@ -170,18 +203,24 @@
         var point = this._map.latLngToContainerPoint(this._markers[markerId].getLatLng());
 
         if (this._hit(marker, point, event)) {
-          this._onClickListeners.forEach(function(listener) { listener(event); });
+          this._onClickListeners.forEach(function(listener) { listener(event, marker); });
           break;
         }
       }
     },
 
     _hit: function(marker, point, event) {
-      var halfWidth = marker.options.icon.options.iconSize[0] / 2;
-      var halfHeight = marker.options.icon.options.iconSize[1] / 2;
+      var width = marker.options.icon.options.iconSize[0];
+      var height = marker.options.icon.options.iconSize[1];
+
+      var top = marker.options.icon.options.iconAnchor[1] + 1;
+      var bottom = height - marker.options.icon.options.iconAnchor[1] + 1;
+      var left = marker.options.icon.options.iconAnchor[0] + 1;
+      var right = width - marker.options.icon.options.iconAnchor[0] + 1;
+
       var x = event.containerPoint.x;
       var y = event.containerPoint.y;
-      return x <= point.x + halfWidth && x >= point.x - halfWidth && y >= point.y - halfHeight && y <= point.y + halfHeight;
+      return x <= point.x + right && x >= point.x - left && y >= point.y - top && y <= point.y + bottom;
     }
   });
 
